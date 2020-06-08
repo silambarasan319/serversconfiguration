@@ -1,1 +1,131 @@
-#mail Server config
+# mail Server config
+Step :1 Install Software
+yum install bind* -y
+
+# Edit named.conf
+vi /etc/name.conf
+        listen-on port 53 { 127.0.0.1;192.168.1.20; };  #13
+        allow-query     { localhost; any; };  #21
+        
+# start and enable the daemon service
+ systemctl start named.service
+ systemctl enable named.service
+ systemctl status named.service
+ 
+ # allow firewall if running
+ firewall-cmd --add-port=53/tcp --per
+ firewall-cmd --add-port=53/udp --per
+ firewall-cmd --list-all
+ 
+ # add this after *ZONE*
+ vi /etc/named.conf
+ 
+# define by root user
+zone "example.com" IN {
+type master;
+file "forward.example.com";     #file name
+allow-update {  none; };
+};
+zone "1.168.192.in-addr.arpa" IN {
+type master;
+file "reverse.example.com";   #file name
+allow-update {  none; };
+};
+
+# To create forward and reverse file
+cd /var/named/
+vi forward.example.com
+
+$TTL 1D
+@       IN SOA  nagios.example.com. root.example.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+@       IN      NS      nagios.example.com.
+@       IN      A       192.168.1.20
+nagios  IN      A       192.168.1.20
+jira    IN      A       192.168.1.30
+rundeck IN      A       192.168.1.10
+ubuntu  IN      A       192.168.1.15
+
+vi  
+
+$TTL 1D
+@       IN SOA  nagios.example.com. root.example.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+@       IN      NS      nagios.example.com.
+@       IN      PTR     example.com.
+nagios  IN      A       192.168.1.20
+jira    IN      A       192.168.1.30
+rundeck IN      A       192.168.1.10
+ubuntu  IN      A       192.168.1.15
+20      IN      PTR     nagios.example.com.
+30      IN      PTR     jira.example.com.
+10      IN      PTR     rundeck.example.com.
+15      IN      PTR     ubuntu.example.com.
+
+# change owner permission
+chown root:named forward.example.com          # mandatory
+chown root:named reverse.example.com
+
+# validation
+named-checkconf -z /etc/named.conf                          # output should be like this -> loaded serial 0
+named-checkzone forward /var/named/forward.example.com      # OK
+named-checkzone reverse /var/named/reverse.example.com      # OK
+
+# restart your service 
+systemctl restart named                # null or journalctl error
+
+ netstat -lntupa | grep LISTEN
+ #output like this
+ tcp        0      0 127.0.0.1:53            0.0.0.0:*               LISTEN      12081/named
+ tcp        0      0 192.168.1.20:53         0.0.0.0:*               LISTEN      12081/named
+ tcp6       0      0 ::1:53                  :::*                    LISTEN      12081/named
+ 
+ 
+ ********* ON CLIENT SIDE ************
+vi /etc/resovl.conf 
+search example.com
+nameserver 192.168.1.20
+
+# Now Test 
+ping -c 4 nagios
+PING nagios.example.com (192.168.1.20) 56(84) bytes of data.
+64 bytes from nagios.example.com (192.168.1.20): icmp_seq=1 ttl=64 time=0.227 ms
+
+
+
+
+
+ 
+ 
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
