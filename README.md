@@ -1,2 +1,2 @@
-# serverconfiguration
-Server Configuration
+# serversconfiguration
+Servers Configuration
